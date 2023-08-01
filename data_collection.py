@@ -13,7 +13,17 @@ class yfin:
         if not os.path.exists(folder_path):#create if not exist folder 
             os.makedirs(folder_path)
         data.to_csv(os.path.join(const.PRICE_VOLUME_CSV_DIR,f"{ticker_code}.csv"))
+    def GetHistoricalMarketCap(ticker_code):
+        ticker = yf.Ticker(ticker_code)  # Replace "AAPL" with the symbol of the stock you want to analyze
 
+    # Get the historical market cap data
+        hist = ticker.history(period="max")
+
+        # Calculate the market cap
+        market_cap = hist['Close'] * ticker.info['sharesOutstanding']
+
+        # Print the market cap
+        print(market_cap)
 class alpha_vantage:
     ALPHA_API_KEY="UN03HRG3Z941GLAP"
 
@@ -57,5 +67,7 @@ class alpha_vantage:
 
 if __name__=="__main__":
     #save_stock_list()
-    yfin.download_price_volume("AAPL")
+    #yfin.download_price_volume("AAPL")
+    yfin.GetHistoricalMarketCap()
     #alpha_vantage.download_cash_flow('AAPL')
+    #yfin.GetCurrentPriceAndVolume("AAPL")

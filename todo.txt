@@ -1,1 +1,3 @@
-setup gitignore file
+edit value calculator that make use of yfinace.GetHistoricalMarketCap
+to calculate the intrinsic value FCF_multiple again 
+
