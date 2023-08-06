@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import const
 import os
+from data_collection import yfin
 class growth_rate:
     def get_CAGR(list):
         n=len(list)-1
@@ -105,12 +106,14 @@ class DCF:
         # print(f"terminal value: {terminal_value}")
         # print(f"discounted_terminal_value: {discounted_terminal_value}")
         # print(f"intrinsic value: {intrinsic_value}")
+        print(f"intrinsic value: {intrinsic_value}")
         return intrinsic_value
 
     def get_DCF_safety_margin(ticker_code):
         #read cash flow and price_volume csv
         cash_flow_df=pd.read_csv(os.path.join(const.CASH_FLOW_CSV_DIR,f"{ticker_code}.csv"))
-        price_volume_df=pd.read_csv(os.path.join(const.PRICE_VOLUME_CSV_DIR,f"{ticker_code}.csv"))
+        #price_volume_df=pd.read_csv(os.path.join(const.PRICE_VOLUME_CSV_DIR,f"{ticker_code}.csv"))
+
         quarterly_market_cap=DCF.get_quarterly_market_cap(price_volume_df)
         #print(quarterly_market_cap)
 
@@ -122,7 +125,10 @@ class DCF:
         average_FCF_multiple=DCF.get_average_FCF_multiple(annual_market_cap,fcf_df)
         intrinsic_value=DCF.GetIntrinsicValue(current_CF=latest_year_FCF,
                                               growth_rate=aagr,FCF_multiple=average_FCF_multiple,discount_rate=0.1)
-
+        current_market_cap=yfin.GetCurrentMarketCap(ticker_code)
+        safety_margin=(intrinsic_value-current_market_cap)/intrinsic_value
+        print(f"safety_margin: {safety_margin}")
+        return safety_margin
 # get_current_market_value=current_price*current_share #try to use yahoo finance to avoid quota limit
     #return check_safety_margin()
 if __name__=="__main__":

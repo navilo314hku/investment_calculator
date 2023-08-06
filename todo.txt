@@ -1,3 +1,9 @@
-edit value calculator that make use of yfinace.GetHistoricalMarketCap
-to calculate the intrinsic value FCF_multiple again 
 
+=> current Taks: use EOD to get historical market cap store to
+ csv file edit intrinsic value FCF multiple calculation 
+    0. Upgrade EOD to fundamental package
+    1. check if the average market cap has the correct value 
+    2. In storeMarketCapAsDf(), store df to a csv file 
+    in csv_files/market_cap/company.csv 
+
+Upgrade cash flow using EOD api (replacement of yfinance )
