@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import const
 import os
-from data_collection import yfin
+import data_collection
+import util
 class growth_rate:
     def get_CAGR(list):
         n=len(list)-1
@@ -73,25 +74,30 @@ class DCF:
         fcf['capitalExpenditures']=cash_flow_df['capitalExpenditures']
         fcf['FCF'] = cash_flow_df['operatingCashflow'] - cash_flow_df['capitalExpenditures']
         return fcf
-    def get_quarterly_market_cap(price_volume_df):
-        quarterly_market_cap = pd.DataFrame()
-        quarterly_market_cap['year'] = price_volume_df['Date'].str[:4].astype(int)
-        quarterly_market_cap['market_cap'] = price_volume_df['Close'] * price_volume_df['Volume']
-        print("writing csv")
-        quarterly_market_cap.to_csv("tmp.csv",index=0)
-        return quarterly_market_cap
-    def get_average_FCF_multiple(market_cap_df,fcf_df):
+
+    def get_average_FCF_multiple(market_cap_df,fcf_df,period=-1):
         # Merge the two dataframes on the 'year' column
+        
         merged_df = market_cap_df.merge(fcf_df, on='year')
+   
         #print(merged_df)
         # Calculate the average FCF multiple
         # calculate FCF multiple for every year 
-        FCF_multiple_col = merged_df['market_cap'] / merged_df['FCF']
+        if period!=-1: #period==-1 indicate using all years
+            merged_df=merged_df.tail(period)
+        print("""
+              ***
+              ***
+              ***
+              """)
+        print(f"merged_df: {merged_df}")
+        FCF_multiple_col = merged_df['market cap'] / merged_df['FCF']
         merged_df['FCF_multiple'] = FCF_multiple_col
-        average_FCF_multiple = (merged_df['market_cap'] / merged_df['FCF']).mean()
+        average_FCF_multiple = (merged_df['market cap'] / merged_df['FCF']).mean()
 
         #print(merged_df)
-        #print(average_FCF_multiple)
+        print("average_FCF_multiple: ")
+        print(average_FCF_multiple)
         return average_FCF_multiple
     def GetIntrinsicValue(current_CF,growth_rate,discount_rate,FCF_multiple,period=10):
         #1. get terminal value
@@ -110,22 +116,32 @@ class DCF:
         return intrinsic_value
 
     def get_DCF_safety_margin(ticker_code):
-        #read cash flow and price_volume csv
-        cash_flow_df=pd.read_csv(os.path.join(const.CASH_FLOW_CSV_DIR,f"{ticker_code}.csv"))
-        #price_volume_df=pd.read_csv(os.path.join(const.PRICE_VOLUME_CSV_DIR,f"{ticker_code}.csv"))
+        
+        #check if folder exist, else: create folder
+        util.CreateFolderIfNotExist(const.CSV_FILES)
+        util.CreateFolderIfNotExist(const.CASH_FLOW_CSV_DIR)
+        util.CreateFolderIfNotExist(const.MARKET_CAP_DIR)
+        #check if cashflow and market_cap file exist, else: collect csv file 
+        cashflow_file_path=os.path.join(const.CASH_FLOW_CSV_DIR,f"{ticker_code}.csv")
+        market_cap_file_path=os.path.join(const.MARKET_CAP_DIR,f"{ticker_code}.csv")
+        if not os.path.exists(cashflow_file_path):
+            print("cashflow not exist")
+            exit(0)
+        if not os.path.exists(market_cap_file_path):
+            print("market cap not exist")
 
-        quarterly_market_cap=DCF.get_quarterly_market_cap(price_volume_df)
-        #print(quarterly_market_cap)
 
-
+        cash_flow_df=pd.read_csv(cashflow_file_path)
+        market_cap_df=pd.read_csv(market_cap_file_path)
         fcf_df=DCF.fcf_from_cash_flow(cash_flow_df)
         latest_year_FCF = fcf_df.iloc[0]['FCF']
         aagr,cagr,best_fit_gr=DCF.get_FCF_growth_rate(fcf_df)
-        annual_market_cap = quarterly_market_cap.groupby('year')['market_cap'].mean().reset_index()
-        average_FCF_multiple=DCF.get_average_FCF_multiple(annual_market_cap,fcf_df)
+        #annual_market_cap = quarterly_market_cap.groupby('year')['market_cap'].mean().reset_index()
+        average_FCF_multiple=DCF.get_average_FCF_multiple(market_cap_df,fcf_df,period=5)
         intrinsic_value=DCF.GetIntrinsicValue(current_CF=latest_year_FCF,
-                                              growth_rate=aagr,FCF_multiple=average_FCF_multiple,discount_rate=0.1)
-        current_market_cap=yfin.GetCurrentMarketCap(ticker_code)
+                                              growth_rate=aagr,FCF_multiple=average_FCF_multiple,
+                                              discount_rate=0.1,period=10)
+        current_market_cap=data_collection.yfin.GetCurrentMarketCap(ticker_code)
         safety_margin=(intrinsic_value-current_market_cap)/intrinsic_value
         print(f"safety_margin: {safety_margin}")
         return safety_margin

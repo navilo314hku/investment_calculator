@@ -1,0 +1,3 @@
+given a list of directories,
+for dir in list:
+    if dir not exist, create dir
