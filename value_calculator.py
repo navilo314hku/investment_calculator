@@ -126,9 +126,16 @@ class DCF:
         market_cap_file_path=os.path.join(const.MARKET_CAP_DIR,f"{ticker_code}.csv")
         if not os.path.exists(cashflow_file_path):
             print("cashflow not exist")
-            exit(0)
+            data_collection.alpha_vantage.download_cash_flow(ticker_code)
+            print("cashflow downloaded")
+        else:
+            print("cashflow exists")
         if not os.path.exists(market_cap_file_path):
             print("market cap not exist")
+            data_collection.EOD.getHistoricalMarketCap(ticker_code)
+            print("historical market cap downloaded")
+        else:
+            print("market cap exists")
 
 
         cash_flow_df=pd.read_csv(cashflow_file_path)
