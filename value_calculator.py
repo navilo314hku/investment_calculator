@@ -114,16 +114,16 @@ class DCF:
         # print(f"intrinsic value: {intrinsic_value}")
         print(f"intrinsic value: {intrinsic_value}")
         return intrinsic_value
-
-    def get_DCF_safety_margin(ticker_code):
-        
-        #check if folder exist, else: create folder
+    def CreateRequiredFolders():
         util.CreateFolderIfNotExist(const.CSV_FILES)
+        util.CreateFolderIfNotExist(const.FIN_STATEMENT_DIR)
         util.CreateFolderIfNotExist(const.CASH_FLOW_CSV_DIR)
+        util.CreateFolderIfNotExist(const.BALANCE_SHEET_CSV_DIR)
+        util.CreateFolderIfNotExist(const.INCOME_STATEMENT_CSV_DIR)
+        
         util.CreateFolderIfNotExist(const.MARKET_CAP_DIR)
-        #check if cashflow and market_cap file exist, else: collect csv file 
-        cashflow_file_path=os.path.join(const.CASH_FLOW_CSV_DIR,f"{ticker_code}.csv")
-        market_cap_file_path=os.path.join(const.MARKET_CAP_DIR,f"{ticker_code}.csv")
+    def CollectRequiredCsv(cashflow_file_path,market_cap_file_path, ticker_code):
+      
         if not os.path.exists(cashflow_file_path):
             print("cashflow not exist")
             data_collection.alpha_vantage.download_cash_flow(ticker_code)
@@ -136,17 +136,24 @@ class DCF:
             print("historical market cap downloaded")
         else:
             print("market cap exists")
-
+    def get_DCF_safety_margin(ticker_code):   
+        DCF.CreateRequiredFolders()
+        #check if folder exist, else: create folder
+        cashflow_file_path=os.path.join(const.CASH_FLOW_CSV_DIR,f"{ticker_code}.csv")
+        market_cap_file_path=os.path.join(const.MARKET_CAP_DIR,f"{ticker_code}.csv")
+        #check if cashflow and market_cap file exist, else: collect csv file 
+        DCF.CollectRequiredCsv(cashflow_file_path,market_cap_file_path,ticker_code)
 
         cash_flow_df=pd.read_csv(cashflow_file_path)
         market_cap_df=pd.read_csv(market_cap_file_path)
         fcf_df=DCF.fcf_from_cash_flow(cash_flow_df)
         latest_year_FCF = fcf_df.iloc[0]['FCF']
         aagr,cagr,best_fit_gr=DCF.get_FCF_growth_rate(fcf_df)
+        min_growth_rate=min(aagr,cagr,best_fit_gr)
         #annual_market_cap = quarterly_market_cap.groupby('year')['market_cap'].mean().reset_index()
         average_FCF_multiple=DCF.get_average_FCF_multiple(market_cap_df,fcf_df,period=5)
         intrinsic_value=DCF.GetIntrinsicValue(current_CF=latest_year_FCF,
-                                              growth_rate=aagr,FCF_multiple=average_FCF_multiple,
+                                              growth_rate=min_growth_rate,FCF_multiple=average_FCF_multiple,
                                               discount_rate=0.1,period=10)
         current_market_cap=data_collection.yfin.GetCurrentMarketCap(ticker_code)
         safety_margin=(intrinsic_value-current_market_cap)/intrinsic_value
@@ -155,4 +162,5 @@ class DCF:
 # get_current_market_value=current_price*current_share #try to use yahoo finance to avoid quota limit
     #return check_safety_margin()
 if __name__=="__main__":
-    DCF.get_DCF_safety_margin("AAPL")
+    #DCF.get_DCF_safety_margin("AAPL")
+    DCF.CreateRequiredFolders()

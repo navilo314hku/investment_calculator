@@ -55,6 +55,30 @@ class EOD:
         else:
             print('Request failed with status code', response.status_code)
             exit(0)
+
+    def storeFinStatementToCSV(ticker_code,statement_type):
+        statement_dir={"Balance_Sheet":const.BALANCE_SHEET_CSV_DIR,
+                       "Cash_Flow":const.CASH_FLOW_CSV_DIR,
+                       "Income_Statement":const.INCOME_STATEMENT_CSV_DIR}
+        def get_first_n_elements(d,n):
+            keys = list(d.keys())[:n]
+            return {key: d[key] for key in keys}
+        if not statement_type in ["Balance_Sheet","Cash_Flow","Income_Statement"]:
+            print("Invalid statement type")
+            exit(1)
+        
+        with open('json_files/AAPLfundamental.json') as json_file:#TODO: remove hardcode
+            data = json.load(json_file)
+            yearly_cashflow=data["Financials"][statement_type]["yearly"]
+            #yearly_cashflow=get_first_n_elements(yearly_cashflow,2) #TODO: remove this line for storing full statement
+            df = pd.DataFrame.from_dict(yearly_cashflow, orient='index')
+            print(df)
+            df_path=os.path.join(statement_dir[statement_type],f"{ticker_code}.csv")
+            df.to_csv(df_path)
+            print(f"updated {df_path}")
+
+    def getFinStatements(ticker_code):
+        return
 class yfin:
     def download_price_volume(ticker_code):
         data = yf.download(ticker_code, interval="3mo")
@@ -117,8 +141,8 @@ class alpha_vantage:
         return 
 
 if __name__=="__main__":
-
-    EOD.getHistoricalMarketCap("demo")
+    EOD.storeFinStatementToCSV("demo",statement_type="Balance_Sheet")
+    #EOD.getHistoricalMarketCap("demo")
     #EODHD.storeMarketCapAsDf()
 
     #alpha_vantage.download_cash_flow('AAPL')
