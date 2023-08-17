@@ -5,6 +5,7 @@ import requests
 import os
 import json
 import yfinance as yf
+import util
 class NasDaq:
     api_key="f1gVr-j9kJdBb25jNKXM"
 class EOD:
@@ -56,28 +57,35 @@ class EOD:
             print('Request failed with status code', response.status_code)
             exit(0)
 
-    def storeFinStatementToCSV(ticker_code,statement_type):
+    def storeFinStatementToCSV(ticker_code,data_dict,statement_type):
         statement_dir={"Balance_Sheet":const.BALANCE_SHEET_CSV_DIR,
                        "Cash_Flow":const.CASH_FLOW_CSV_DIR,
                        "Income_Statement":const.INCOME_STATEMENT_CSV_DIR}
-        def get_first_n_elements(d,n):
+        def get_first_n_rows(d,n): 
+            """This function is used to get the statement partially, for better understanding"""
             keys = list(d.keys())[:n]
             return {key: d[key] for key in keys}
         if not statement_type in ["Balance_Sheet","Cash_Flow","Income_Statement"]:
             print("Invalid statement type")
             exit(1)
         
-        with open('json_files/AAPLfundamental.json') as json_file:#TODO: remove hardcode
-            data = json.load(json_file)
-            yearly_cashflow=data["Financials"][statement_type]["yearly"]
-            #yearly_cashflow=get_first_n_elements(yearly_cashflow,2) #TODO: remove this line for storing full statement
-            df = pd.DataFrame.from_dict(yearly_cashflow, orient='index')
-            print(df)
-            df_path=os.path.join(statement_dir[statement_type],f"{ticker_code}.csv")
-            df.to_csv(df_path)
-            print(f"updated {df_path}")
+        yearly_cashflow=data_dict["Financials"][statement_type]["yearly"]
+        #yearly_cashflow=get_first_n_rows(yearly_cashflow,2) 
+        df = pd.DataFrame.from_dict(yearly_cashflow, orient='index')
+        print(df)
+        df_path=os.path.join(statement_dir[statement_type],f"{ticker_code}.csv")
+        df.to_csv(df_path)
+        print(f"updated {df_path}")
 
-    def getFinStatements(ticker_code):
+    def getFinStatements(ticker_code="AAPL"):
+        url=f"https://eodhistoricaldata.com/api/fundamentals/{ticker_code}?api_token=demo"#TODO: change the api_token
+        data_dict=util.GetJsonDictFromUrl(url)
+        #data_dict=json.loads(json_file)
+        statement_type = ["Balance_Sheet","Cash_Flow","Income_Statement"]
+        for s_type in statement_type:
+            EOD.storeFinStatementToCSV(ticker_code,data_dict,statement_type=s_type)
+            print(f"stored {s_type}")
+
         return
 class yfin:
     def download_price_volume(ticker_code):
@@ -141,7 +149,8 @@ class alpha_vantage:
         return 
 
 if __name__=="__main__":
-    EOD.storeFinStatementToCSV("demo",statement_type="Balance_Sheet")
+    #EOD.storeFinStatementToCSV("demo",statement_type="Balance_Sheet")
+    EOD.getFinStatements()
     #EOD.getHistoricalMarketCap("demo")
     #EODHD.storeMarketCapAsDf()
 
