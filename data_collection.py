@@ -38,15 +38,15 @@ class EOD:
         print(averageMarketCapDF)
         # Print the resulting dataframe
         #print(df)
-    def getHistoricalMarketCap(ticker_code):
+    def getHistoricalMarketCap(ticker_code="AAPL"):#TODO: remove AAPL as default ticker
         #url = f"https://eodhistoricaldata.com/api/historical-market-cap/{ticker_code}"
         #url=f"https://eodhistoricaldata.com/api/historical-market-cap/AAPL.US?api_token={EOD.api_key}"
         
-        demo_url="https://eodhistoricaldata.com/api/historical-market-cap/AAPL.US?api_token=demo"
+        url=f"https://eodhistoricaldata.com/api/historical-market-cap/{ticker_code}?api_token=demo" #TODO: add api_token
         #TODO change url back to referencing ticker_code
         #params = {'api_token': EOD.api_key}
 
-        response = requests.get(demo_url)
+        response = requests.get(url)
         #response=requests.get(url)
 
         if response.ok:
