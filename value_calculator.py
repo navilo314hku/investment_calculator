@@ -112,7 +112,7 @@ class DCF:
     #     fcf['FCF'] = cash_flow_df['operatingCashflow'] - cash_flow_df['capitalExpenditures']
     #     return fcf
 
-    def get_average_FCF_multiple(market_cap_df,fcf_df,period=-1):
+    def get_average_FCF_multiple(market_cap_df,fcf_df,period=-1,free_cash_flow_col='freeCashFlow'):
         # Merge the two dataframes on the 'year' column
         
         merged_df = market_cap_df.merge(fcf_df, on='year')
@@ -124,9 +124,9 @@ class DCF:
               ***
               """)
         print(f"merged_df: {merged_df}")
-        FCF_multiple_col = merged_df['market cap'] / merged_df['freeCashFlow']
+        FCF_multiple_col = merged_df['market cap'] / merged_df[free_cash_flow_col]
         merged_df['FCF_multiple'] = FCF_multiple_col
-        average_FCF_multiple = (merged_df['market cap'] / merged_df['freeCashFlow']).mean()
+        average_FCF_multiple = (merged_df['market cap'] / merged_df[free_cash_flow_col]).mean()
 
         #print(merged_df)
         print("average_FCF_multiple: ")
@@ -171,24 +171,25 @@ class DCF:
             print(f"{ticker_code} historical market cap downloaded from EOD")
         else:
             print("market cap exists")
-    def get_DCF_safety_margin(ticker_code):   
+    def get_DCF_safety_margin(ticker_code):  
+        FREE_CASH_FLOW_COL= 'freeCashFlow'
         DCF.CreateRequiredFolders()
         #check if folder exist, else: create folder
         cashflow_file_path=os.path.join(const.CASH_FLOW_CSV_DIR,f"{ticker_code}.csv")
         market_cap_file_path=os.path.join(const.MARKET_CAP_DIR,f"{ticker_code}.csv")
         #check if cashflow and market_cap file exist, else: collect csv file 
         DCF.CollectRequiredCsv(cashflow_file_path,market_cap_file_path,ticker_code)
-        #completed test
         cash_flow_df=pd.read_csv(cashflow_file_path)
         market_cap_df=pd.read_csv(market_cap_file_path)
         #totalCashFromOperatingActivities 
-        latest_year_FCF = cash_flow_df.iloc[0]['freeCashFlow']
+
+        latest_year_FCF = cash_flow_df.iloc[0][FREE_CASH_FLOW_COL]
         print(f"latest year free cash flow: {latest_year_FCF}")
         aagr,cagr,best_fit_gr=DCF.get_FCF_growth_rate(cash_flow_df,plot=0)
         min_growth_rate=min(aagr,cagr,best_fit_gr)
         print(f"minimum growth rate: {min_growth_rate}")
         #annual_market_cap = quarterly_market_cap.groupby('year')['market_cap'].mean().reset_index()
-        average_FCF_multiple=DCF.get_average_FCF_multiple(market_cap_df,cash_flow_df,period=5)
+        average_FCF_multiple=DCF.get_average_FCF_multiple(market_cap_df,cash_flow_df,period=5,free_cash_flow_col=FREE_CASH_FLOW_COL)
         intrinsic_value=DCF.GetIntrinsicValue(current_CF=latest_year_FCF,
                                               growth_rate=min_growth_rate,FCF_multiple=average_FCF_multiple,
                                               discount_rate=0.1,period=10)
