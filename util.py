@@ -1,6 +1,7 @@
 import os 
 import json
 import requests
+
 def CreateFolderIfNotExist(directory):
     if not os.path.exists(directory):
         # Create the directory

@@ -3,6 +3,8 @@ import csv
 import pandas as pd
 import requests
 import os
+from io import StringIO
+
 import json
 import yfinance as yf
 import util
@@ -10,6 +12,7 @@ class NasDaq:
     api_key="f1gVr-j9kJdBb25jNKXM"
 class EOD:
     api_key="64c9d7111332d8.91672679"
+
     def storeMarketCap(ticker_code,data_dict):
         """store market cap json to a csv file """
       
@@ -87,6 +90,24 @@ class EOD:
             print(f"stored {s_type}")
 
         return
+    
+    def getUSStockList(delisted=1):
+        US_EXCHANGE_CODE=[ 'US','NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX', 'OTCMKTS', 'NMFQS', 'NYSE MKT','OTCBB', 'OTCGREY', 'BATS', 'OTC']
+        for exchange_code in US_EXCHANGE_CODE: 
+            url=f"https://eodhistoricaldata.com/api/exchange-symbol-list/{exchange_code}?api_token={EOD.api_key}&delisted={delisted}"
+            #url=f"https://eodhistoricaldata.com/api/exchange-symbol-list/{exchange_code}"
+
+            print(f"stocklist from exchange code: {exchange_code}")
+            
+            session = requests.Session()
+            params = {"api_token": EOD.api_key}
+            r = session.get(url)#, params=params)
+            if r.status_code == requests.codes.ok:
+                df = pd.read_csv(StringIO(r.text), skipfooter=0, parse_dates=[0], index_col=0, engine='python')
+                print(df)
+            else:
+                raise Exception(r.status_code, r.reason, url)
+            exit(0)
 class yfin:
     def download_price_volume(ticker_code):
         data = yf.download(ticker_code, interval="3mo")
@@ -151,7 +172,8 @@ class alpha_vantage:
 if __name__=="__main__":
     #EOD.storeFinStatementToCSV("demo",statement_type="Balance_Sheet")
     #EOD.getFinStatements()
-    EOD.getHistoricalMarketCap()
+    #EOD.getHistoricalMarketCap()
+    EOD.getUSStockList()
     #EOD.getHistoricalMarketCap("demo")
     #EODHD.storeMarketCapAsDf()
 
