@@ -83,7 +83,7 @@ class DCF:
     #     print(f"cagr: {cagr}")
     #     print(f"gr by best fit {best_fit_gr}")
     #     return aagr,cagr,best_fit_gr
-    def get_FCF_growth_rate(cash_flow_df):
+    def get_FCF_growth_rate(cash_flow_df,plot=0):
         print("get_FCF_growth_rate()")
         #create new col year
         cash_flow_df['year'] = cash_flow_df['date'].str[:4].astype(int)
@@ -96,7 +96,7 @@ class DCF:
         
         cagr=growth_rate.get_CAGR(fcf_list,period=5)
         
-        best_fit_gr=growth_rate.get_growth_rate_by_best_fit(cash_flow_df,"freeCashFlow",year_col='year',period=5,plot=1)
+        best_fit_gr=growth_rate.get_growth_rate_by_best_fit(cash_flow_df,"freeCashFlow",year_col='year',period=5,plot=plot)
         print(f"aagr: {aagr}")
         print(f"cagr: {cagr}")
         print(f"gr by best fit {best_fit_gr}")
@@ -116,10 +116,6 @@ class DCF:
         # Merge the two dataframes on the 'year' column
         
         merged_df = market_cap_df.merge(fcf_df, on='year')
-   
-        #print(merged_df)
-        # Calculate the average FCF multiple
-        # calculate FCF multiple for every year 
         if period!=-1: #period==-1 indicate using all years
             merged_df=merged_df.tail(period)
         print("""
@@ -128,9 +124,9 @@ class DCF:
               ***
               """)
         print(f"merged_df: {merged_df}")
-        FCF_multiple_col = merged_df['market cap'] / merged_df['FCF']
+        FCF_multiple_col = merged_df['market cap'] / merged_df['freeCashFlow']
         merged_df['FCF_multiple'] = FCF_multiple_col
-        average_FCF_multiple = (merged_df['market cap'] / merged_df['FCF']).mean()
+        average_FCF_multiple = (merged_df['market cap'] / merged_df['freeCashFlow']).mean()
 
         #print(merged_df)
         print("average_FCF_multiple: ")
@@ -187,14 +183,17 @@ class DCF:
         market_cap_df=pd.read_csv(market_cap_file_path)
         #totalCashFromOperatingActivities 
         latest_year_FCF = cash_flow_df.iloc[0]['freeCashFlow']
-        aagr,cagr,best_fit_gr=DCF.get_FCF_growth_rate(cash_flow_df)
-        min_growth_rate=min(aagr,cagr,best_fit_gr)#TODO fix bug
+        print(f"latest year free cash flow: {latest_year_FCF}")
+        aagr,cagr,best_fit_gr=DCF.get_FCF_growth_rate(cash_flow_df,plot=0)
+        min_growth_rate=min(aagr,cagr,best_fit_gr)
+        print(f"minimum growth rate: {min_growth_rate}")
         #annual_market_cap = quarterly_market_cap.groupby('year')['market_cap'].mean().reset_index()
-        average_FCF_multiple=DCF.get_average_FCF_multiple(market_cap_df,fcf_df,period=5)
+        average_FCF_multiple=DCF.get_average_FCF_multiple(market_cap_df,cash_flow_df,period=5)
         intrinsic_value=DCF.GetIntrinsicValue(current_CF=latest_year_FCF,
                                               growth_rate=min_growth_rate,FCF_multiple=average_FCF_multiple,
                                               discount_rate=0.1,period=10)
         current_market_cap=data_collection.yfin.GetCurrentMarketCap(ticker_code)
+        print(f"current market capitalization: {current_market_cap}")
         safety_margin=(intrinsic_value-current_market_cap)/intrinsic_value
         print(f"safety_margin: {safety_margin}")
         return safety_margin

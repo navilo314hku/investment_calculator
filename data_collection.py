@@ -150,7 +150,8 @@ class alpha_vantage:
 
 if __name__=="__main__":
     #EOD.storeFinStatementToCSV("demo",statement_type="Balance_Sheet")
-    EOD.getFinStatements()
+    #EOD.getFinStatements()
+    EOD.getHistoricalMarketCap()
     #EOD.getHistoricalMarketCap("demo")
     #EODHD.storeMarketCapAsDf()
 
