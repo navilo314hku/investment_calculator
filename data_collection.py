@@ -91,8 +91,13 @@ class EOD:
 
         return
     
-    def getUSStockList(delisted=1):
-        US_EXCHANGE_CODE=[ 'US','NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX', 'OTCMKTS', 'NMFQS', 'NYSE MKT','OTCBB', 'OTCGREY', 'BATS', 'OTC']
+    def getUSStockList(delisted=0):
+        util.CreateFolderIfNotExist(const.STOCK_LIST_DIR)
+        util.CreateFolderIfNotExist(const.DELISTED_STOCK_DIR)
+        util.CreateFolderIfNotExist(const.AVAILABLE_STOCK_DIR)
+        US_EXCHANGE_CODE=[ 'US']
+
+        #US_EXCHANGE_CODE=[ 'NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX', 'OTCMKTS', 'NMFQS', 'NYSE MKT','OTCBB', 'OTCGREY', 'BATS', 'OTC']
         for exchange_code in US_EXCHANGE_CODE: 
             url=f"https://eodhistoricaldata.com/api/exchange-symbol-list/{exchange_code}?api_token={EOD.api_key}&delisted={delisted}"
             #url=f"https://eodhistoricaldata.com/api/exchange-symbol-list/{exchange_code}"
@@ -105,9 +110,14 @@ class EOD:
             if r.status_code == requests.codes.ok:
                 df = pd.read_csv(StringIO(r.text), skipfooter=0, parse_dates=[0], index_col=0, engine='python')
                 print(df)
+                if (delisted):
+                    store_path=os.path.join(const.DELISTED_STOCK_DIR,f"{exchange_code}.csv")
+                else: 
+                    store_path=os.path.join(const.AVAILABLE_STOCK_DIR,f"{exchange_code}.csv")
+                df.to_csv(store_path,index=1)
             else:
                 raise Exception(r.status_code, r.reason, url)
-            exit(0)
+            
 class yfin:
     def download_price_volume(ticker_code):
         data = yf.download(ticker_code, interval="3mo")
@@ -173,7 +183,7 @@ if __name__=="__main__":
     #EOD.storeFinStatementToCSV("demo",statement_type="Balance_Sheet")
     #EOD.getFinStatements()
     #EOD.getHistoricalMarketCap()
-    EOD.getUSStockList()
+    EOD.getUSStockList(delisted=1)
     #EOD.getHistoricalMarketCap("demo")
     #EODHD.storeMarketCapAsDf()
 
